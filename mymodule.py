@@ -66,7 +66,13 @@ class MyClass(object):
         for city,information in self.selected_cities.items():
             car_time,car_distance=self.get_traveltime(city, driving_url)
             pb_time,pb_distance=self.get_traveltime(city, transit_url)
-            information.update({"car_time":car_time,"car_distance":car_distance,"pb_time":pb_time,"pb_distance":pb_distance})
+            if car_time is not None and pb_time is not None:
+                car_time_minutes=(car_time.hour*60)+car_time.minute
+                pb_time_minutes=(pb_time.hour*60)+pb_time.minute
+                ratio=round(pb_time_minutes/car_time_minutes,2)
+            else:
+                ratio=None
+            information.update({"pb_time":pb_time,"pb_distance":pb_distance,"car_time":car_time,"car_distance":car_distance,"ratio":ratio})
             
         sys.stderr.write("Travel times and distances obtained\n")
     
@@ -86,7 +92,7 @@ class MyClass(object):
             travel_time, travel_distance = travel_data_normalized["duration.text"][0],travel_data_normalized["distance.text"][0]
             formated_travel_time = self.manage_time(travel_time)
             
-            return formated_travel_time, travel_distance
+            return formated_travel_time.time(), travel_distance
         else:
             '''
             In this case, for all the cities that show a NO_STATUS we return None.
@@ -121,17 +127,18 @@ class MyClass(object):
         if len(time)> 1:
             hour_minute_time=':'.join(map(str,time))
             hour_minute_time_format=self.format_time(hour_minute_time)
-            return hour_minute_time_format.time()
+            return hour_minute_time_format
         else:
             minute_time=':'.join(['00',str(time[0])])
             minute_time_format=self.format_time(minute_time)
-            return minute_time_format.time()
+            return minute_time_format
         
     def format_time(self,time_to_format):
         '''
         This function passes the time string to a datetime object
         '''
         format_time=datetime.datetime.strptime(time_to_format,'%H:%M')
+        
         return format_time
         
     def get_data_from_url(self,url):
